@@ -93,22 +93,30 @@ function main(auth) {
 }
 
 async function processCommand(auth, words, event) {
-    switch (words[1].toLowerCase() + " " + words[2].toLowerCase()) {
-        case "help":
-            event.respond("This bot is for checking in and checking out on your Remote Shifts" +
-                "\n\"Clock on\" Clocks you on for your shift!" +
-                "\n\"Clock off\" Clocks you off your shift!" +
-                "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
-            break;
-        case "clock on":
-            clockOn(auth, event);
-            break;
-        case "clock off":
-            clockOff(auth, event);
-            break;
-        default:
-            event.respond("Incorrect Input, please try again or use help");
-            break;
+    if (words[2] == null && words[1].toLowerCase() == "help") {
+        event.respond("This bot is for checking in and checking out on your Remote Shifts" +
+            "\n\"Clock on\" Clocks you on for your shift!" +
+            "\n\"Clock off\" Clocks you off your shift!" +
+            "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
+    }
+    else {
+        switch (words[1].toLowerCase() + " " + words[2].toLowerCase()) {
+            case "help":
+                event.respond("This bot is for checking in and checking out on your Remote Shifts" +
+                    "\n\"Clock on\" Clocks you on for your shift!" +
+                    "\n\"Clock off\" Clocks you off your shift!" +
+                    "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
+                break;
+            case "clock on":
+                clockOn(auth, event);
+                break;
+            case "clock off":
+                clockOff(auth, event);
+                break;
+            default:
+                event.respond("Incorrect Input, please try again or use help");
+                break;
+        }
     }
 }
 
