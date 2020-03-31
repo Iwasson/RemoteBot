@@ -4,6 +4,8 @@ const { google } = require('googleapis');
 const spreadId = '1ZvDfvDtjjsV3WZ0N95lC49JUGQfh8VobuaM9FMJ_Oq8';
 const bot = require('node-rocketchat-bot');
 const keys = require('./keys.json');
+const axios = require('axios');
+
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 const TOKEN_PATH = 'token.json';
@@ -93,24 +95,21 @@ function main(auth) {
 }
 
 async function processCommand(auth, words, event) {
-    if (words[2] == null && words[1].toLowerCase() == "help") {
-        event.respond("This bot is for checking in and checking out on your Remote Shifts" +
-            "\n\"Clock on\" Clocks you on for your shift!" +
-            "\n\"Clock off\" Clocks you off your shift!" +
+    if(words[1] == null) {
+        event.respond("Incorrect Input, please try again or use help");
+    }
+    else if (words[2] == null && words[1].toLowerCase() == "help") {
+        event.respond("This bot is for Signing in and Signing out on your Remote Shifts" +
+            "\n\"Sign in\" Signs you in for your shift!" +
+            "\n\"Sign out\" Signs you out for your shift!" +
             "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
     }
     else {
         switch (words[1].toLowerCase() + " " + words[2].toLowerCase()) {
-            case "help":
-                event.respond("This bot is for checking in and checking out on your Remote Shifts" +
-                    "\n\"Clock on\" Clocks you on for your shift!" +
-                    "\n\"Clock off\" Clocks you off your shift!" +
-                    "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
-                break;
-            case "clock on":
+            case "sign in":
                 clockOn(auth, event);
                 break;
-            case "clock off":
+            case "sign out":
                 clockOff(auth, event);
                 break;
             default:
@@ -123,7 +122,7 @@ async function processCommand(auth, words, event) {
 async function clockOn(auth, event) {
     let user = event.message.author.name;
 
-    event.respond("Clocking you on " + user);
+    event.respond("Signing you in " + user);
 
     var date = new Date();
 
@@ -155,7 +154,7 @@ async function clockOn(auth, event) {
     if (dataArray != null) {
         dataArray.forEach(element => {
             if (element[0] == user && element[2] == "N/A") {
-                event.respond("You are already clocked on. Did you mean to clock off?");
+                event.respond("You are already Signed in. Did you mean to Sign out?");
                 clockedOn = true;
             }
         });
@@ -185,7 +184,7 @@ async function clockOn(auth, event) {
 async function clockOff(auth, event) {
     let user = event.message.author.name;
 
-    event.respond("Clocking you off " + user);
+    event.respond("Signing you out " + user);
 
     var date = new Date();
 
@@ -240,7 +239,7 @@ async function clockOff(auth, event) {
     };
 
     if (found == false) {
-        event.respond("It looks like you never Clocked on, did you mean Clock on?")
+        event.respond("It looks like you never Signed on, did you mean Sign on?")
     }
     else {
         let res = await sheets.spreadsheets.values.update(updateOptions);
