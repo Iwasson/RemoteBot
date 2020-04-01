@@ -95,7 +95,7 @@ function main(auth) {
 }
 
 async function processCommand(auth, words, event) {
-    if(words[1] == null) {
+    if (words[1] == null) {
         event.respond("Incorrect Input, please try again or use help");
     }
     else if (words[2] == null && words[1].toLowerCase() == "help") {
@@ -134,51 +134,15 @@ async function clockOn(auth, event) {
         time = "0" + time;
     }
 
-    var newRange = 'TimeLog!A2';
-
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const opt = {
-        spreadsheetId: spreadId, //spreadsheet id
-        range: 'TimeLog!A2:C1000'    //value range we are looking at
-    };
-
-
-    let data = await sheets.spreadsheets.values.get(opt);
-    dataArray = data.data.values;
-
-
-    let clockedOn = false;
-
-    if (dataArray != null) {
-        dataArray.forEach(element => {
-            if (element[0] == user && element[2] == "N/A") {
-                event.respond("You are already Signed in. Did you mean to Sign out?");
-                clockedOn = true;
-            }
-        });
-    }
-
-    vals = {
-        "range": "TimeLog!A2",
-        "majorDimension": "ROWS",
-        "values": [
-            [user, hour + ":" + time, "N/A", fullDate],
-        ],
-    };
-
-    const updateOptions = {
-        spreadsheetId: spreadId,
-        range: newRange,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        resource: vals,
-    };
-
-    if (clockedOn == false) {
-        let res = await sheets.spreadsheets.values.append(updateOptions);
-    }
+    axios.get('https://spotdev.cat.pdx.edu/manage-timesheets/public/api/timesheet/sign-auto/Bishop?key=68b329da9893e34099c7d8ad5cb9c940')
+        .then(function (response) {
+            // handle success
+            console.log(response);
+        })
+        .catch(function (error) {
+            // handle error
+            console.log(error);
+        })
 }
 
 async function clockOff(auth, event) {
@@ -196,52 +160,4 @@ async function clockOff(auth, event) {
         time = "0" + time;
     }
 
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const opt = {
-        spreadsheetId: spreadId, //spreadsheet id
-        range: 'TimeLog!A2:D1000'    //value range we are looking at
-    };
-
-
-    let data = await sheets.spreadsheets.values.get(opt);
-    dataArray = data.data.values;
-
-    let position = 2;
-    let found = false;
-    let pos = 0;
-
-    if (dataArray != null) {
-        dataArray.forEach(element => {
-            if (element[0] == user && element[2] == "N/A") {
-                pos = position;
-                found = true;
-            }
-            position += 1;
-        });
-    }
-
-    var newRange = 'TimeLog!A' + pos;
-
-    vals = {
-        "range": "TimeLog!A" + pos,
-        "majorDimension": "ROWS",
-        "values": [
-            [null, null, hour + ":" + time, null],
-        ],
-    };
-
-    const updateOptions = {
-        spreadsheetId: spreadId,
-        range: newRange,
-        valueInputOption: 'USER_ENTERED',
-        resource: vals,
-    };
-
-    if (found == false) {
-        event.respond("It looks like you never Signed on, did you mean Sign on?")
-    }
-    else {
-        let res = await sheets.spreadsheets.values.update(updateOptions);
-    }
 }
