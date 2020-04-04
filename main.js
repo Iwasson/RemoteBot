@@ -134,7 +134,8 @@ async function clockOn(auth, event) {
         time = "0" + time;
     }
 
-    axios.get('https://spotdev.cat.pdx.edu/manage-timesheets/public/api/timesheet/sign-auto/Bishop?key=68b329da9893e34099c7d8ad5cb9c940')
+    axios.get('https://spot.cat.pdx.edu/api/external/timesheet/sign-auto/Bishop?key=68b329da9893e34099c7d8ad5cb9c940')
+    //axios.get('https://spot.cat.pdx.edu/robots.txt')
         .then(function (response) {
             // handle success
             console.log(response);
