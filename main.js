@@ -5,6 +5,9 @@ const spreadId = '1ZvDfvDtjjsV3WZ0N95lC49JUGQfh8VobuaM9FMJ_Oq8';
 const bot = require('node-rocketchat-bot');
 const keys = require('./keys.json');
 const axios = require('axios');
+const signAuto = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-auto/';
+const signIn = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-in/';
+const signOut = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-out/';
 
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
@@ -102,15 +105,18 @@ async function processCommand(auth, words, event) {
         event.respond("This bot is for Signing in and Signing out on your Remote Shifts" +
             "\n\"Sign in\" Signs you in for your shift!" +
             "\n\"Sign out\" Signs you out for your shift!" +
+            "\n\"Sign in -force\" Forces a sign in regardless of a sign out (please don't use this unless you know what you are doing)" +
+            "\n\"Sign out -force\" Forces a sign out regardless of a sign in (please don't use this unless you know what you are doing)" +
+            "\n Note: SPOT manages your timesheet, check it regularly to make sure everything is correct!" + 
             "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
     }
     else {
         switch (words[1].toLowerCase() + " " + words[2].toLowerCase()) {
             case "sign in":
-                clockOn(auth, event);
+                clock(auth, event, words);
                 break;
             case "sign out":
-                clockOff(auth, event);
+                clock(auth, event, words);
                 break;
             default:
                 event.respond("Incorrect Input, please try again or use help");
@@ -119,46 +125,72 @@ async function processCommand(auth, words, event) {
     }
 }
 
-async function clockOn(auth, event) {
+//one clock function since we need to do less work, SPOT api does most of the work for us
+async function clock(auth, event, words) {
+
+    let command = words[1] + " " + words[2];
+    if (command != null) {
+        command = command.toLowerCase();
+    }
+
     let user = event.message.author.name;
+    let option = "auto"
+    let force = false;
 
-    event.respond("Signing you in " + user);
+    if (command == "sign in" && words[3] != "-force") { event.respond("Signing you in " + user); }
+    else if (command == "sign out" && words[3] != "-force") { event.respond("Signing you out " + user); }
+    else if (command == "sign in" && words[3] == "-force") { event.respond("Signing you in forcefully " + user); force = true; option = "in"; }
+    else if (command == "sign out" && words[3] == "-force") { event.respond("Signing you out forcefully " + user); force = true; option = "out"; }
+    else { event.respond("I do not understand your request, please try again or use the \"help\" command"); return; }
 
-    var date = new Date();
+
+    //structure is signAuto + user + key 
+    if (force == false) {
+        axios.get(signAuto + user + keys.key)
+            .then(function (response) {
+                // handle success
+                console.log(response.data.message);
+                event.respond(response.data.message);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+                event.respond(error);
+            })
+    }
+    else if (option == "in") {
+        axios.get(signIn + user + keys.key)
+            .then(function (response) {
+                // handle success
+                console.log(response);
+                event.respond(response.data.message);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+                event.respond(error);
+            })
+    }
+    else if(option == "out") {
+        axios.get(signOut + user + keys.key)
+            .then(function (response) {
+                // handle success
+                console.log(response);
+                event.respond(response.data.message);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+                event.respond(error);
+            })
+    }
+}
+
+
+/*
+var date = new Date();
 
     var fullDate = date.getMonth() + 1 + "/" + date.getDate() + "/" + date.getFullYear();
     var hour = date.getHours();
     var time = date.getMinutes();
-
-    if (time < 10) {
-        time = "0" + time;
-    }
-
-    axios.get('https://spot.cat.pdx.edu/api/external/timesheet/sign-auto/Bishop?key=68b329da9893e34099c7d8ad5cb9c940')
-    //axios.get('https://spot.cat.pdx.edu/robots.txt')
-        .then(function (response) {
-            // handle success
-            console.log(response);
-        })
-        .catch(function (error) {
-            // handle error
-            console.log(error);
-        })
-}
-
-async function clockOff(auth, event) {
-    let user = event.message.author.name;
-
-    event.respond("Signing you out " + user);
-
-    var date = new Date();
-
-    var fullDate = date.getMonth() + 1 + "/" + date.getDate() + "/" + date.getFullYear();
-    var hour = date.getHours();
-    var time = date.getMinutes();
-
-    if (time < 10) {
-        time = "0" + time;
-    }
-
-}
+*/
