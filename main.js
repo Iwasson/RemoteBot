@@ -150,12 +150,12 @@ async function clock(auth, event, words) {
             .then(function (response) {
                 // handle success
                 console.log(response.data.message);
-                event.respond(response.data.message);
+                //event.respond(response.data.message);
             })
             .catch(function (error) {
                 // handle error
                 console.log(error);
-                event.respond(error);
+                //event.respond(error);
             })
     }
     else if (option == "in") {
@@ -163,12 +163,12 @@ async function clock(auth, event, words) {
             .then(function (response) {
                 // handle success
                 console.log(response);
-                event.respond(response.data.message);
+                //event.respond(response.data.message);
             })
             .catch(function (error) {
                 // handle error
                 console.log(error);
-                event.respond(error);
+                //event.respond(error);
             })
     }
     else if(option == "out") {
@@ -176,12 +176,12 @@ async function clock(auth, event, words) {
             .then(function (response) {
                 // handle success
                 console.log(response);
-                event.respond(response.data.message);
+                //event.respond(response.data.message);
             })
             .catch(function (error) {
                 // handle error
                 console.log(error);
-                event.respond(error);
+                //event.respond(error);
             })
     }
 }
