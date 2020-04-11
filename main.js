@@ -8,6 +8,7 @@ const axios = require('axios');
 const signAuto = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-auto/';
 const signIn = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-in/';
 const signOut = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-out/';
+const state = 'https://spot.cat.pdx.edu/api/external/timesheet/state/';
 
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
@@ -107,16 +108,16 @@ async function processCommand(auth, words, event) {
             "\n\"Sign out\" Signs you out for your shift!" +
             "\n\"Sign in -force\" Forces a sign in regardless of a sign out (please don't use this unless you know what you are doing)" +
             "\n\"Sign out -force\" Forces a sign out regardless of a sign in (please don't use this unless you know what you are doing)" +
-            "\n Note: SPOT manages your timesheet, check it regularly to make sure everything is correct!" + 
+            "\n Note: SPOT manages your timesheet, check it regularly to make sure everything is correct!" +
             "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
     }
     else {
         switch (words[1].toLowerCase() + " " + words[2].toLowerCase()) {
             case "sign in":
-                clock(auth, event, words);
+                clock(event, words);
                 break;
             case "sign out":
-                clock(auth, event, words);
+                clock(event, words);
                 break;
             default:
                 event.respond("Incorrect Input, please try again or use help");
@@ -125,23 +126,43 @@ async function processCommand(auth, words, event) {
     }
 }
 
+//gets the last signin/out time and returns an error if the user is trying to do a double punch
+async function getLastSign(user) {
+    let status = null;
+    await axios.get(state + user + keys.key)
+        .then(function (response) {
+            // handle success
+            status = response.data.state;
+        })
+        .catch(function (error) {
+            // handle error
+            console.log(error);
+            status = null;
+        })
+    return status;
+}
+
 //one clock function since we need to do less work, SPOT api does most of the work for us
-async function clock(auth, event, words) {
-
+async function clock(event, words) {
     let command = words[1] + " " + words[2];
-    if (command != null) {
-        command = command.toLowerCase();
-    }
+    if (command != null) { command = command.toLowerCase();}
 
-    let user = event.message.author.name;
+    let user = event.message.author.username;
     let option = "auto"
     let force = false;
+    let status = await getLastSign(user);
 
-    if (command == "sign in" && words[3] != "-force") { event.respond("Signing you in " + user); }
-    else if (command == "sign out" && words[3] != "-force") { event.respond("Signing you out " + user); }
-    else if (command == "sign in" && words[3] == "-force") { event.respond("Signing you in forcefully " + user); force = true; option = "in"; }
-    else if (command == "sign out" && words[3] == "-force") { event.respond("Signing you out forcefully " + user); force = true; option = "out"; }
-    else { event.respond("I do not understand your request, please try again or use the \"help\" command"); return; }
+    let failed = true;
+
+    if (command == "sign in" && words[3] != "-force" && status != "signed-in") { event.respond("Signing you in " + user); failed = false; }
+    else if(command == "sign in" && status == "signed-in") { event.respond("It looks like you are already signed in. If you forgot to sign out then use \"Sign in -force\" to make a new punch"); return;}
+
+    if (command == "sign out" && words[3] != "-force" && status != "signed-out") { event.respond("Signing you out " + user); failed = false;}
+    else if(command == "sign out" && status == "signed-out") { event.respond("It looks like you are already signed out. If you forgot to sign in then use \"Sign out -force\" to make a new punch"); return;}
+
+    if (command == "sign in" && words[3] == "-force") { event.respond("Signing you in forcefully " + user); force = true; option = "in"; failed = false;}
+    if (command == "sign out" && words[3] == "-force") { event.respond("Signing you out forcefully " + user); force = true; option = "out"; failed = false;}
+    if(failed == true) { event.respond("I do not understand your request, please try again or use the \"help\" command"); return; }
 
 
     //structure is signAuto + user + key 
@@ -171,7 +192,7 @@ async function clock(auth, event, words) {
                 //event.respond(error);
             })
     }
-    else if(option == "out") {
+    else if (option == "out") {
         axios.get(signOut + user + keys.key)
             .then(function (response) {
                 // handle success
@@ -185,12 +206,3 @@ async function clock(auth, event, words) {
             })
     }
 }
-
-
-/*
-var date = new Date();
-
-    var fullDate = date.getMonth() + 1 + "/" + date.getDate() + "/" + date.getFullYear();
-    var hour = date.getHours();
-    var time = date.getMinutes();
-*/
