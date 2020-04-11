@@ -155,10 +155,10 @@ async function clock(event, words) {
     let failed = true;
 
     if (command == "sign in" && words[3] != "-force" && status != "signed-in") { event.respond("Signing you in " + user); failed = false; }
-    else if(command == "sign in" && status == "signed-in") { event.respond("It looks like you are already signed in. If you forgot to sign out then use \"Sign in -force\" to make a new punch"); return;}
+    else if(command == "sign in" && words[3] != "-force" && status == "signed-in") { event.respond("It looks like you are already signed in. If you forgot to sign out then use \"Sign in -force\" to make a new punch"); return;}
 
     if (command == "sign out" && words[3] != "-force" && status != "signed-out") { event.respond("Signing you out " + user); failed = false;}
-    else if(command == "sign out" && status == "signed-out") { event.respond("It looks like you are already signed out. If you forgot to sign in then use \"Sign out -force\" to make a new punch"); return;}
+    else if(command == "sign out" && words[3] != "-force" && status == "signed-out") { event.respond("It looks like you are already signed out. If you forgot to sign in then use \"Sign out -force\" to make a new punch"); return;}
 
     if (command == "sign in" && words[3] == "-force") { event.respond("Signing you in forcefully " + user); force = true; option = "in"; failed = false;}
     if (command == "sign out" && words[3] == "-force") { event.respond("Signing you out forcefully " + user); force = true; option = "out"; failed = false;}
