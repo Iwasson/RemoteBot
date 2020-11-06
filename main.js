@@ -148,7 +148,7 @@ async function clock(event, words) {
     if (command != null) { command = command.toLowerCase();}
 
     let user = event.message.author.username;
-    let option = "auto"
+    let option = "auto";
     let force = false;
     let status = await getLastSign(user);
 
