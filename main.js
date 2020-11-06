@@ -4,6 +4,12 @@ const { google } = require('googleapis');
 const spreadId = '1ZvDfvDtjjsV3WZ0N95lC49JUGQfh8VobuaM9FMJ_Oq8';
 const bot = require('node-rocketchat-bot');
 const keys = require('./keys.json');
+const axios = require('axios');
+const signAuto = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-auto/';
+const signIn = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-in/';
+const signOut = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-out/';
+const state = 'https://spot.cat.pdx.edu/api/external/timesheet/state/';
+
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 const TOKEN_PATH = 'token.json';
@@ -93,25 +99,25 @@ function main(auth) {
 }
 
 async function processCommand(auth, words, event) {
-    if (words[2] == null && words[1].toLowerCase() == "help") {
-        event.respond("This bot is for checking in and checking out on your Remote Shifts" +
-            "\n\"Clock on\" Clocks you on for your shift!" +
-            "\n\"Clock off\" Clocks you off your shift!" +
+    if (words[1] == null) {
+        event.respond("Incorrect Input, please try again or use help");
+    }
+    else if (words[2] == null && words[1].toLowerCase() == "help") {
+        event.respond("This bot is for Signing in and Signing out on your Remote Shifts" +
+            "\n\"Sign in\" Signs you in for your shift!" +
+            "\n\"Sign out\" Signs you out for your shift!" +
+            "\n\"Sign in -force\" Forces a sign in regardless of a sign out (please don't use this unless you know what you are doing)" +
+            "\n\"Sign out -force\" Forces a sign out regardless of a sign in (please don't use this unless you know what you are doing)" +
+            "\n Note: SPOT manages your timesheet, check it regularly to make sure everything is correct!" +
             "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
     }
     else {
         switch (words[1].toLowerCase() + " " + words[2].toLowerCase()) {
-            case "help":
-                event.respond("This bot is for checking in and checking out on your Remote Shifts" +
-                    "\n\"Clock on\" Clocks you on for your shift!" +
-                    "\n\"Clock off\" Clocks you off your shift!" +
-                    "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
+            case "sign in":
+                clock(event, words);
                 break;
-            case "clock on":
-                clockOn(auth, event);
-                break;
-            case "clock off":
-                clockOff(auth, event);
+            case "sign out":
+                clock(event, words);
                 break;
             default:
                 event.respond("Incorrect Input, please try again or use help");
@@ -120,129 +126,83 @@ async function processCommand(auth, words, event) {
     }
 }
 
-async function clockOn(auth, event) {
-    let user = event.message.author.name;
-
-    event.respond("Clocking you on " + user);
-
-    var date = new Date();
-
-    var fullDate = date.getMonth() + 1 + "/" + date.getDate() + "/" + date.getFullYear();
-    var hour = date.getHours();
-    var time = date.getMinutes();
-
-    if (time < 10) {
-        time = "0" + time;
-    }
-
-    var newRange = 'TimeLog!A2';
-
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const opt = {
-        spreadsheetId: spreadId, //spreadsheet id
-        range: 'TimeLog!A2:C1000'    //value range we are looking at
-    };
-
-
-    let data = await sheets.spreadsheets.values.get(opt);
-    dataArray = data.data.values;
-
-
-    let clockedOn = false;
-
-    if (dataArray != null) {
-        dataArray.forEach(element => {
-            if (element[0] == user && element[2] == "N/A") {
-                event.respond("You are already clocked on. Did you mean to clock off?");
-                clockedOn = true;
-            }
-        });
-    }
-
-    vals = {
-        "range": "TimeLog!A2",
-        "majorDimension": "ROWS",
-        "values": [
-            [user, hour + ":" + time, "N/A", fullDate],
-        ],
-    };
-
-    const updateOptions = {
-        spreadsheetId: spreadId,
-        range: newRange,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        resource: vals,
-    };
-
-    if (clockedOn == false) {
-        let res = await sheets.spreadsheets.values.append(updateOptions);
-    }
+//gets the last signin/out time and returns an error if the user is trying to do a double punch
+async function getLastSign(user) {
+    let status = null;
+    await axios.get(state + user + keys.key)
+        .then(function (response) {
+            // handle success
+            status = response.data.state;
+        })
+        .catch(function (error) {
+            // handle error
+            console.log(error);
+            status = null;
+        })
+    return status;
 }
 
-async function clockOff(auth, event) {
-    let user = event.message.author.name;
+//one clock function since we need to do less work, SPOT api does most of the work for us
+async function clock(event, words) {
+    let command = words[1] + " " + words[2];
+    if (command != null) { command = command.toLowerCase();}
 
-    event.respond("Clocking you off " + user);
+    let user = event.message.author.username;
+    let option = "auto";
+    let force = false;
+    let status = await getLastSign(user);
 
-    var date = new Date();
+    let failed = true;
 
-    var fullDate = date.getMonth() + 1 + "/" + date.getDate() + "/" + date.getFullYear();
-    var hour = date.getHours();
-    var time = date.getMinutes();
+    if (command == "sign in" && words[3] != "-force" && status != "signed-in") { event.respond("Signing you in " + user); failed = false; }
+    else if(command == "sign in" && words[3] != "-force" && status == "signed-in") { event.respond("It looks like you are already signed in. If you forgot to sign out then use \"Sign in -force\" to make a new punch"); return;}
 
-    if (time < 10) {
-        time = "0" + time;
+    if (command == "sign out" && words[3] != "-force" && status != "signed-out") { event.respond("Signing you out " + user); failed = false;}
+    else if(command == "sign out" && words[3] != "-force" && status == "signed-out") { event.respond("It looks like you are already signed out. If you forgot to sign in then use \"Sign out -force\" to make a new punch"); return;}
+
+    if (command == "sign in" && words[3] == "-force") { event.respond("Signing you in forcefully " + user); force = true; option = "in"; failed = false;}
+    if (command == "sign out" && words[3] == "-force") { event.respond("Signing you out forcefully " + user); force = true; option = "out"; failed = false;}
+    if(failed == true) { event.respond("I do not understand your request, please try again or use the \"help\" command"); return; }
+
+
+    //structure is signAuto + user + key 
+    if (force == false) {
+        axios.get(signAuto + user + keys.key)
+            .then(function (response) {
+                // handle success
+                console.log(response.data.message);
+                //event.respond(response.data.message);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+                //event.respond(error);
+            })
     }
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const opt = {
-        spreadsheetId: spreadId, //spreadsheet id
-        range: 'TimeLog!A2:D1000'    //value range we are looking at
-    };
-
-
-    let data = await sheets.spreadsheets.values.get(opt);
-    dataArray = data.data.values;
-
-    let position = 2;
-    let found = false;
-    let pos = 0;
-
-    if (dataArray != null) {
-        dataArray.forEach(element => {
-            if (element[0] == user && element[2] == "N/A") {
-                pos = position;
-                found = true;
-            }
-            position += 1;
-        });
+    else if (option == "in") {
+        axios.get(signIn + user + keys.key)
+            .then(function (response) {
+                // handle success
+                console.log(response);
+                //event.respond(response.data.message);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+                //event.respond(error);
+            })
     }
-
-    var newRange = 'TimeLog!A' + pos;
-
-    vals = {
-        "range": "TimeLog!A" + pos,
-        "majorDimension": "ROWS",
-        "values": [
-            [null, null, hour + ":" + time, null],
-        ],
-    };
-
-    const updateOptions = {
-        spreadsheetId: spreadId,
-        range: newRange,
-        valueInputOption: 'USER_ENTERED',
-        resource: vals,
-    };
-
-    if (found == false) {
-        event.respond("It looks like you never Clocked on, did you mean Clock on?")
-    }
-    else {
-        let res = await sheets.spreadsheets.values.update(updateOptions);
+    else if (option == "out") {
+        axios.get(signOut + user + keys.key)
+            .then(function (response) {
+                // handle success
+                console.log(response);
+                //event.respond(response.data.message);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+                //event.respond(error);
+            })
     }
 }
