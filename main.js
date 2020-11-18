@@ -39,7 +39,7 @@ const processMessages = async(err, message, messageOptions) => {
     console.log(singleM);
     
     if(!singleM.unread) { return; }
-    if(singleM.mentions[0]) { mentioned = singleM.mentions[0].username; }
+    if(singleM.mentions[0] && singleM.mentions[0].username == USER) { mentioned = singleM.mentions[0].username; }
     
     if (!err && mentioned) {
         if (singleM.u._id === myUserId) return;
