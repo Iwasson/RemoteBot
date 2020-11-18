@@ -1,4 +1,2 @@
 node_modules
-keys.json
-token.json
-credentials.json
+auth.json
