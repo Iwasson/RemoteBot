@@ -45,7 +45,7 @@ async function processMessage(messageObj, replyTo) {
     console.log(command[1]);
     console.log("Author: " + author);
 
-    if (command[1] == null) {
+    if (command[1] == null && command[0] == "@RemoteBot") {
         replyTo(messageObj, "Incorrect Input, please try again or use help");
     }
     else if (command[2] == null && command[1].toLowerCase() == "help") {
