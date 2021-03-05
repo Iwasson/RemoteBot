@@ -28,7 +28,7 @@ async function processMessage(messageObj, replyTo) {
         console.log(command);
     }
 
-    if(messageObj.room != 'clock' && !MENTION && command[0] != "@RemoteBotDev") {
+    if(messageObj.room != 'clock' && !MENTION && command[0] != "@RemoteBot") {
         return;
     }
 
