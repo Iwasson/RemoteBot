@@ -19,9 +19,9 @@ bot.runbot({
 
 
 async function processMessage(messageObj, replyTo) {
-    if(messageObj.room != 'hack') {
+    if(messageObj.room != 'clock') {
         let options = { dm: messageObj.author }
-        replyTo(messageObj, "Please only use this bot in #Hack", options);
+        replyTo(messageObj, "Please only use this bot in #Clock", options);
         return;
     }
 
