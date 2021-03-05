@@ -5,6 +5,7 @@ const signAuto = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-auto/';
 const signIn = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-in/';
 const signOut = 'https://spot.cat.pdx.edu/api/external/timesheet/sign-out/';
 const state = 'https://spot.cat.pdx.edu/api/external/timesheet/state/';
+const MENTION = false;
 
 bot.runbot({
     HOST: auth.host,  //server url for rocket
@@ -12,20 +13,33 @@ bot.runbot({
     PASS: auth.password,        //login password for bot
     SSL: 'false',               //specify if using SSL, true = SSL false = no SSL
     ROOMS: [],        //a list of rooms the bot will join on login
-    MUSTBEMENTIONED: true,      //true = bot must be @ to recieve messages
+    MUSTBEMENTIONED: MENTION,      //true = bot must be @ to recieve messages
 
     onMessage: processMessage   //define function to deal with messages
 })
 
 
 async function processMessage(messageObj, replyTo) {
+    let command = messageObj.message.split(" ");
+
+    if(!MENTION && command.length < 3) {
+        command[2] = command[1];
+        command[1] = command[0];
+        console.log(command);
+    }
+
+    if(messageObj.room != 'clock' && !MENTION && command[0] != "@RemoteBotDev") {
+        return;
+    }
+
     if(messageObj.room != 'clock') {
         let options = { dm: messageObj.author }
         replyTo(messageObj, "Please only use this bot in #Clock", options);
         return;
-    }
+    } 
 
-    let command = messageObj.message.split(" ");
+    
+
     let author = messageObj.author;
     console.log("processing reply");
     console.log(command[1]);
