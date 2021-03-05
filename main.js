@@ -66,9 +66,9 @@ async function processMessage(messageObj, replyTo) {
             case "sign out":
                 clock(command, author, messageObj, replyTo);
                 break;
-            default:
-                replyTo(messageObj, "Incorrect Input, please try again or use help");
-                break;
+            //default:
+                //replyTo(messageObj, "Incorrect Input, please try again or use help");
+                //break;
         }
     }
     
