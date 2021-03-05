@@ -58,7 +58,7 @@ async function processMessage(messageObj, replyTo) {
             "\nEasy as pie! If you have further questions, suggestions or if this bot dies ping Bishop!");
     }
     else {
-        if(!command[2]) { replyTo(messageObj, "Incorrect Input, please try again or use help"); }
+        if(!command[2] && command[1] == "sign") { replyTo(messageObj, "Incorrect Input, please try again or use help"); }
         switch (command[1].toLowerCase() + " " + command[2].toLowerCase()) {
             case "sign in":
                 clock(command, author, messageObj, replyTo);
